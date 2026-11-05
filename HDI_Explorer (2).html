@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HDI Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<script>
+/* =====================================================================
+   FALLBACK DATA BLOCK — ข้อมูลสำรองแบบออฟไลน์ (ใช้เมื่อดึงข้อมูลออนไลน์ไม่ได้)
+   ปกติเว็บจะดึงข้อมูลล่าสุดจากฐานข้อมูลออนไลน์เอง (ดูส่วน LIVE DATA ด้านล่าง) จึงไม่ต้องแก้บล็อกนี้
+   years : รายการปีของข้อมูล (เรียงจากน้อยไปมาก) — ตาราง กราฟ และ Excel ดึงปีจากตรงนี้
+   rows  : [อันดับ HDI ของปีล่าสุด, ชื่อ (อังกฤษ), รหัสประเทศ ISO2 ("" = กลุ่ม/ภูมิภาค),
+            กลุ่มการพัฒนา (Very High/High/Medium/Low), [ค่า HDI ตามลำดับ years; ไม่มีข้อมูลใส่ null]]
+   แถวชื่อ "World" ใช้เป็นค่าเฉลี่ยโลกในกราฟส่วนต่าง — ควรมีไว้
+   ===================================================================== */
+const HDI_DATA={
+years:[1990, 2000, 2010, 2015, 2019, 2020, 2021, 2022],
+rows:[
+[1,"Switzerland","CH","Very High",[0.85,0.885,0.94,0.952,0.96,0.957,0.965,0.967]],
+[2,"Norway","NO","Very High",[0.845,0.914,0.938,0.952,0.961,0.963,0.964,0.966]],
+[3,"Iceland","IS","Very High",[0.834,0.895,0.927,0.948,0.958,0.955,0.957,0.959]],
+[4,"Hong Kong, China (SAR)","HK","Very High",[0.739,0.831,0.914,0.936,0.953,0.955,0.959,0.956]],
+[5,"Denmark","DK","Very High",[0.839,0.89,0.913,0.936,0.946,0.946,0.947,0.952]],
+[5,"Sweden","SE","Very High",[0.808,0.903,0.91,0.937,0.947,0.944,0.949,0.952]],
+[7,"Germany","DE","Very High",[0.828,0.89,0.929,0.941,0.951,0.948,0.948,0.95]],
+[7,"Ireland","IE","Very High",[0.743,0.851,0.908,0.924,0.942,0.945,0.946,0.95]],
+[9,"Singapore","SG","Very High",[0.78,0.863,0.921,0.935,0.945,0.942,0.942,0.949]],
+[10,"Australia","AU","Very High",[0.864,0.896,0.924,0.933,0.941,0.948,0.949,0.946]],
+[10,"Netherlands","NL","Very High",[0.847,0.892,0.917,0.932,0.941,0.938,0.941,0.946]],
+[12,"Belgium","BE","Very High",[0.814,0.884,0.913,0.924,0.936,0.93,0.938,0.942]],
+[12,"Finland","FI","Very High",[0.811,0.887,0.912,0.93,0.939,0.939,0.941,0.942]],
+[12,"Liechtenstein","LI","Very High",[null,0.871,0.916,0.926,0.94,0.933,0.936,0.942]],
+[15,"United Kingdom","GB","Very High",[0.804,0.863,0.913,0.923,0.933,0.92,0.931,0.94]],
+[16,"New Zealand","NZ","Very High",[0.812,0.894,0.924,0.933,0.937,0.935,0.936,0.939]],
+[17,"United Arab Emirates","AE","Very High",[0.717,0.79,0.828,0.86,0.933,0.93,0.931,0.937]],
+[18,"Canada","CA","Very High",[0.861,0.89,0.911,0.927,0.932,0.928,0.934,0.935]],
+[19,"Korea (Republic of)","KR","Very High",[0.731,0.824,0.89,0.908,0.922,0.922,0.926,0.929]],
+[20,"Luxembourg","LU","Very High",[0.793,0.864,0.912,0.914,0.925,0.921,0.927,0.927]],
+[20,"United States","US","Very High",[0.875,0.894,0.916,0.924,0.933,0.923,0.921,0.927]],
+[22,"Austria","AT","Very High",[0.823,0.87,0.903,0.91,0.92,0.916,0.92,0.926]],
+[22,"Slovenia","SI","Very High",[null,0.823,0.89,0.903,0.918,0.91,0.916,0.926]],
+[24,"Japan","JP","Very High",[0.846,0.883,0.903,0.913,0.918,0.917,0.92,0.92]],
+[25,"Israel","IL","Very High",[0.781,0.835,0.887,0.899,0.909,0.906,0.911,0.915]],
+[25,"Malta","MT","Very High",[0.726,0.779,0.862,0.887,0.905,0.901,0.912,0.915]],
+[27,"Spain","ES","Very High",[0.762,0.828,0.868,0.889,0.904,0.894,0.904,0.911]],
+[28,"France","FR","Very High",[0.79,0.844,0.88,0.893,0.905,0.9,0.906,0.91]],
+[29,"Cyprus","CY","Very High",[0.733,0.797,0.859,0.874,0.901,0.9,0.901,0.907]],
+[30,"Italy","IT","Very High",[0.78,0.842,0.88,0.881,0.899,0.892,0.899,0.906]],
+[31,"Estonia","EE","Very High",[0.741,0.798,0.864,0.883,0.893,0.891,0.89,0.899]],
+[32,"Czechia","CZ","Very High",[0.748,0.81,0.872,0.891,0.896,0.891,0.891,0.895]],
+[33,"Greece","GR","Very High",[0.762,0.818,0.874,0.881,0.89,0.887,0.887,0.893]],
+[34,"Bahrain","BH","Very High",[0.733,0.775,0.807,0.859,0.888,0.884,0.884,0.888]],
+[35,"Andorra","AD","Very High",[null,0.815,0.863,0.856,0.865,0.843,0.855,0.884]],
+[36,"Poland","PL","Very High",[0.715,0.794,0.845,0.869,0.88,0.874,0.876,0.881]],
+[37,"Latvia","LV","Very High",[0.732,0.761,0.827,0.853,0.873,0.873,0.865,0.879]],
+[37,"Lithuania","LT","Very High",[0.74,0.769,0.846,0.865,0.886,0.88,0.875,0.879]],
+[39,"Croatia","HR","Very High",[null,0.764,0.824,0.844,0.866,0.86,0.867,0.878]],
+[40,"Qatar","QA","Very High",[0.764,0.793,0.829,0.852,0.869,0.863,0.864,0.875]],
+[40,"Saudi Arabia","SA","Very High",[0.699,0.746,0.805,0.842,0.862,0.861,0.867,0.875]],
+[42,"Portugal","PT","Very High",[0.703,0.793,0.831,0.85,0.864,0.861,0.865,0.874]],
+[43,"San Marino","SM","Very High",[0.841,0.875,0.901,0.872,0.861,0.844,0.853,0.867]],
+[44,"Chile","CL","Very High",[0.705,0.763,0.813,0.846,0.859,0.849,0.856,0.86]],
+[45,"Slovakia","SK","Very High",[null,0.761,0.841,0.852,0.863,0.86,0.852,0.855]],
+[45,"Türkiye","TR","Very High",[0.598,0.669,0.75,0.821,0.842,0.835,0.841,0.855]],
+[47,"Hungary","HU","Very High",[0.721,0.773,0.829,0.839,0.854,0.849,0.846,0.851]],
+[48,"Argentina","AR","Very High",[0.724,0.78,0.834,0.85,0.853,0.841,0.844,0.849]],
+[49,"Kuwait","KW","Very High",[0.698,0.78,0.811,0.829,0.838,0.826,0.836,0.847]],
+[50,"Montenegro","ME","Very High",[null,null,0.806,0.827,0.841,0.832,0.84,0.844]],
+[51,"Saint Kitts and Nevis","KN","Very High",[null,null,0.79,0.829,0.838,0.832,0.832,0.838]],
+[52,"Uruguay","UY","Very High",[0.702,0.754,0.785,0.807,0.818,0.82,0.814,0.83]],
+[53,"Romania","RO","Very High",[0.709,0.721,0.813,0.813,0.834,0.828,0.825,0.827]],
+[54,"Antigua and Barbuda","AG","Very High",[null,null,0.808,0.818,0.831,0.82,0.819,0.826]],
+[55,"Brunei Darussalam","BN","Very High",[0.779,0.789,0.825,0.832,0.827,0.827,0.824,0.823]],
+[56,"Russian Federation","RU","Very High",[0.741,0.733,0.797,0.823,0.839,0.826,0.818,0.821]],
+[57,"Bahamas","BS","Very High",[0.76,0.788,0.8,0.807,0.802,0.798,0.799,0.82]],
+[57,"Panama","PA","Very High",[0.672,0.722,0.775,0.802,0.82,0.809,0.813,0.82]],
+[59,"Oman","OM","Very High",[null,0.702,0.798,0.824,0.841,0.823,0.81,0.819]],
+[60,"Georgia","GE","Very High",[null,0.694,0.763,0.798,0.816,0.807,0.809,0.814]],
+[60,"Trinidad and Tobago","TT","Very High",[0.656,0.708,0.785,0.812,0.813,0.815,0.804,0.814]],
+[62,"Barbados","BB","Very High",[0.728,0.76,0.792,0.798,0.806,0.803,0.803,0.809]],
+[63,"Malaysia","MY","Very High",[0.649,0.726,0.768,0.792,0.805,0.802,0.798,0.807]],
+[64,"Costa Rica","CR","Very High",[0.659,0.709,0.769,0.792,0.811,0.811,0.804,0.806]],
+[65,"Serbia","RS","Very High",[null,0.689,0.768,0.794,0.812,0.806,0.804,0.805]],
+[66,"Thailand","TH","Very High",[0.581,0.663,0.743,0.789,0.801,0.8,0.797,0.803]],
+[67,"Kazakhstan","KZ","Very High",[0.672,0.68,0.766,0.799,0.81,0.806,0.801,0.802]],
+[67,"Seychelles","SC","Very High",[null,0.755,0.774,0.797,0.808,0.799,0.795,0.802]],
+[69,"Belarus","BY","Very High",[null,0.708,0.79,0.809,0.81,0.8,0.801,0.801]],
+[70,"Bulgaria","BG","High",[0.698,0.723,0.79,0.809,0.813,0.802,0.796,0.799]],
+[71,"Palau","PW","High",[null,0.747,0.775,0.782,0.792,0.794,0.802,0.797]],
+[72,"Mauritius","MU","High",[0.62,0.682,0.755,0.791,0.806,0.792,0.79,0.796]],
+[73,"Grenada","GD","High",[null,null,0.779,0.786,0.79,0.786,0.788,0.793]],
+[74,"Albania","AL","High",[0.649,0.678,0.766,0.797,0.8,0.784,0.785,0.789]],
+[75,"China","CN","High",[0.482,0.586,0.698,0.741,0.775,0.781,0.785,0.788]],
+[76,"Armenia","AM","High",[0.658,0.656,0.739,0.769,0.789,0.769,0.774,0.786]],
+[77,"Mexico","MX","High",[0.666,0.709,0.747,0.769,0.781,0.757,0.757,0.781]],
+[78,"Iran (Islamic Republic of)","IR","High",[0.613,0.692,0.756,0.782,0.785,0.779,0.776,0.78]],
+[78,"Sri Lanka","LK","High",[0.641,0.689,0.735,0.76,0.775,0.777,0.783,0.78]],
+[80,"Bosnia and Herzegovina","BA","High",[null,0.656,0.718,0.757,0.78,0.776,0.776,0.779]],
+[81,"Saint Vincent and the Grenadines","VC","High",[null,0.691,0.756,0.777,0.789,0.785,0.773,0.772]],
+[82,"Dominican Republic","DO","High",[0.579,0.646,0.707,0.739,0.765,0.76,0.756,0.766]],
+[83,"Ecuador","EC","High",[0.645,0.684,0.736,0.764,0.758,0.734,0.746,0.765]],
+[83,"North Macedonia","MK","High",[null,0.676,0.746,0.777,0.787,0.766,0.764,0.765]],
+[85,"Cuba","CU","High",[0.684,0.694,0.779,0.765,0.766,0.759,0.742,0.764]],
+[86,"Moldova (Republic of)","MD","High",[0.688,0.655,0.716,0.749,0.773,0.765,0.767,0.763]],
+[87,"Maldives","MV","High",[null,0.635,0.692,0.728,0.753,0.737,0.753,0.762]],
+[87,"Peru","PE","High",[0.62,0.675,0.725,0.758,0.774,0.758,0.755,0.762]],
+[89,"Azerbaijan","AZ","High",[null,0.635,0.733,0.751,0.762,0.722,0.738,0.76]],
+[89,"Brazil","BR","High",[0.62,0.668,0.722,0.752,0.764,0.758,0.756,0.76]],
+[91,"Colombia","CO","High",[0.614,0.672,0.732,0.758,0.768,0.756,0.752,0.758]],
+[92,"Libya","LY","High",[0.724,0.746,0.774,0.749,0.756,0.737,0.746,0.746]],
+[93,"Algeria","DZ","High",[0.593,0.652,0.721,0.736,0.742,0.73,0.74,0.745]],
+[94,"Turkmenistan","TM","High",[null,null,0.699,0.725,0.732,0.731,0.74,0.744]],
+[95,"Guyana","GY","High",[0.496,0.57,0.65,0.686,0.711,0.727,0.721,0.742]],
+[96,"Mongolia","MN","High",[0.579,0.595,0.7,0.739,0.749,0.74,0.73,0.741]],
+[97,"Dominica","DM","High",[null,0.721,0.735,0.719,0.745,0.738,0.737,0.74]],
+[98,"Tonga","TO","High",[0.64,0.679,0.709,0.723,0.74,0.742,0.738,0.739]],
+[99,"Jordan","JO","High",[0.622,0.681,0.727,0.738,0.744,0.74,0.736,0.736]],
+[100,"Ukraine","UA","High",[0.731,0.698,0.766,0.764,0.774,0.762,0.755,0.734]],
+[101,"Tunisia","TN","High",[0.566,0.651,0.713,0.724,0.74,0.734,0.729,0.732]],
+[102,"Marshall Islands","MH","High",[null,null,null,0.688,0.722,0.727,0.729,0.731]],
+[102,"Paraguay","PY","High",[0.604,0.656,0.7,0.738,0.746,0.742,0.73,0.731]],
+[104,"Fiji","FJ","High",[0.63,0.669,0.699,0.716,0.73,0.722,0.715,0.729]],
+[105,"Egypt","EG","High",[0.567,0.629,0.667,0.695,0.724,0.729,0.726,0.728]],
+[106,"Uzbekistan","UZ","High",[null,0.603,0.675,0.701,0.725,0.716,0.721,0.727]],
+[107,"Viet Nam","VN","High",[0.492,0.599,0.676,0.697,0.717,0.726,0.718,0.726]],
+[108,"Saint Lucia","LC","High",[0.666,0.692,0.731,0.736,0.733,0.724,0.717,0.725]],
+[109,"Lebanon","LB","High",[null,null,0.749,0.756,0.76,0.742,0.725,0.723]],
+[110,"South Africa","ZA","High",[0.635,0.633,0.675,0.721,0.741,0.722,0.721,0.717]],
+[111,"Palestine, State of","PS","High",[null,null,0.688,0.71,0.739,0.715,0.715,0.716]],
+[112,"Indonesia","ID","High",[0.526,0.597,0.667,0.698,0.718,0.712,0.707,0.713]],
+[113,"Philippines","PH","High",[0.598,0.635,0.673,0.696,0.714,0.705,0.692,0.71]],
+[114,"Botswana","BW","High",[0.587,0.581,0.652,0.688,0.703,0.701,0.68,0.708]],
+[115,"Jamaica","JM","High",[0.664,0.657,0.711,0.712,0.712,0.707,0.704,0.706]],
+[116,"Samoa","WS","High",[null,0.672,0.704,0.71,0.712,0.712,0.708,0.702]],
+[117,"Kyrgyzstan","KG","High",[0.637,0.617,0.661,0.689,0.699,0.691,0.696,0.701]],
+[118,"Belize","BZ","High",[0.609,0.657,0.72,0.714,0.718,0.705,0.698,0.7]],
+[119,"Venezuela (Bolivarian Republic of)","VE","Medium",[0.657,0.699,0.759,0.766,0.72,0.691,0.69,0.699]],
+[120,"Bolivia (Plurinational State of)","BO","Medium",[0.546,0.625,0.661,0.688,0.715,0.691,0.691,0.698]],
+[120,"Morocco","MA","Medium",[0.448,0.525,0.604,0.656,0.684,0.683,0.688,0.698]],
+[122,"Nauru","NR","Medium",[null,null,0.559,0.642,0.68,0.689,0.693,0.696]],
+[123,"Gabon","GA","Medium",[0.599,0.626,0.656,0.692,0.702,0.704,0.687,0.693]],
+[124,"Suriname","SR","Medium",[null,null,0.696,0.707,0.71,0.702,0.689,0.69]],
+[125,"Bhutan","BT","Medium",[null,null,0.582,0.625,0.668,0.675,0.677,0.681]],
+[126,"Tajikistan","TJ","Medium",[0.616,0.548,0.631,0.651,0.668,0.656,0.677,0.679]],
+[127,"El Salvador","SV","Medium",[0.519,0.609,0.657,0.663,0.676,0.666,0.669,0.674]],
+[128,"Iraq","IQ","Medium",[0.497,0.583,0.629,0.656,0.678,0.661,0.667,0.673]],
+[129,"Bangladesh","BD","Medium",[0.399,0.491,0.558,0.604,0.646,0.657,0.662,0.67]],
+[130,"Nicaragua","NI","Medium",[0.487,0.563,0.611,0.644,0.661,0.652,0.665,0.669]],
+[131,"Cabo Verde","CV","Medium",[null,0.59,0.649,0.658,0.667,0.649,0.65,0.661]],
+[132,"Tuvalu","TV","Medium",[0.564,0.599,0.623,0.656,0.654,0.655,0.653,0.653]],
+[133,"Equatorial Guinea","GQ","Medium",[null,0.511,0.609,0.648,0.653,0.65,0.647,0.65]],
+[134,"India","IN","Medium",[0.434,0.49,0.572,0.619,0.638,0.638,0.633,0.644]],
+[135,"Micronesia (Federated States of)","FM","Medium",[null,0.637,0.644,0.642,0.64,0.636,0.634,0.634]],
+[136,"Guatemala","GT","Medium",[0.49,0.551,0.613,0.629,0.645,0.638,0.63,0.629]],
+[137,"Kiribati","KI","Medium",[null,0.547,0.584,0.625,0.636,0.629,0.627,0.628]],
+[138,"Honduras","HN","Medium",[0.513,0.553,0.596,0.61,0.629,0.621,0.62,0.624]],
+[139,"Lao People's Democratic Republic","LA","Medium",[0.408,0.473,0.557,0.604,0.617,0.616,0.615,0.62]],
+[140,"Vanuatu","VU","Medium",[null,null,0.578,0.592,0.614,0.612,0.614,0.614]],
+[141,"Sao Tome and Principe","ST","Medium",[0.48,0.498,0.553,0.595,0.608,0.609,0.609,0.613]],
+[142,"Eswatini (Kingdom of)","SZ","Medium",[0.546,0.465,0.498,0.577,0.623,0.622,0.612,0.61]],
+[142,"Namibia","NA","Medium",[0.595,0.549,0.584,0.627,0.638,0.634,0.616,0.61]],
+[144,"Myanmar","MM","Medium",[0.333,0.407,0.506,0.557,0.608,0.615,0.599,0.608]],
+[145,"Ghana","GH","Medium",[0.445,0.5,0.571,0.586,0.599,0.601,0.6,0.602]],
+[146,"Kenya","KE","Medium",[0.48,0.487,0.545,0.575,0.604,0.599,0.596,0.601]],
+[146,"Nepal","NP","Medium",[0.395,0.461,0.543,0.568,0.598,0.593,0.591,0.601]],
+[148,"Cambodia","KH","Medium",[0.379,0.431,0.542,0.564,0.596,0.596,0.596,0.6]],
+[149,"Congo","CG","Medium",[0.541,0.509,0.581,0.61,0.596,0.598,0.598,0.593]],
+[150,"Angola","AO","Medium",[null,0.38,0.516,0.591,0.597,0.594,0.59,0.591]],
+[151,"Cameroon","CM","Medium",[0.44,0.426,0.515,0.562,0.586,0.585,0.581,0.587]],
+[152,"Comoros","KM","Medium",[null,0.458,0.524,0.556,0.584,0.588,0.585,0.586]],
+[153,"Zambia","ZM","Medium",[0.417,0.418,0.528,0.563,0.574,0.569,0.565,0.569]],
+[154,"Papua New Guinea","PG","Medium",[0.394,0.456,0.497,0.54,0.562,0.567,0.564,0.568]],
+[155,"Timor-Leste","TL","Medium",[null,0.495,0.639,0.621,0.627,0.633,0.574,0.566]],
+[156,"Solomon Islands","SB","Medium",[null,0.488,0.553,0.562,0.568,0.566,0.564,0.562]],
+[157,"Syrian Arab Republic","SY","Medium",[0.563,0.587,0.661,0.552,0.564,0.561,0.558,0.557]],
+[158,"Haiti","HT","Medium",[0.441,0.485,0.449,0.549,0.559,0.557,0.551,0.552]],
+[159,"Uganda","UG","Medium",[0.329,0.392,0.5,0.525,0.544,0.545,0.545,0.55]],
+[159,"Zimbabwe","ZW","Medium",[0.479,0.426,0.481,0.544,0.56,0.554,0.549,0.55]],
+[161,"Nigeria","NG","Low",[null,null,0.488,0.52,0.537,0.539,0.542,0.548]],
+[161,"Rwanda","RW","Low",[0.32,0.328,0.485,0.509,0.531,0.535,0.539,0.548]],
+[163,"Togo","TG","Low",[0.399,0.436,0.469,0.51,0.536,0.54,0.545,0.547]],
+[164,"Mauritania","MR","Low",[0.397,0.461,0.508,0.536,0.552,0.539,0.538,0.54]],
+[164,"Pakistan","PK","Low",[0.394,0.434,0.496,0.525,0.537,0.536,0.537,0.54]],
+[166,"Côte d'Ivoire","CI","Low",[0.425,0.454,0.47,0.501,0.529,0.53,0.53,0.534]],
+[167,"Tanzania (United Republic of)","TZ","Low",[0.366,0.396,0.493,0.507,0.533,0.535,0.529,0.532]],
+[168,"Lesotho","LS","Low",[0.479,0.456,0.47,0.508,0.528,0.53,0.522,0.521]],
+[169,"Senegal","SN","Low",[0.371,0.388,0.47,0.501,0.514,0.514,0.512,0.517]],
+[170,"Sudan","SD","Low",[0.322,0.42,0.489,0.514,0.521,0.518,0.516,0.516]],
+[171,"Djibouti","DJ","Low",[null,0.33,0.422,0.473,0.508,0.512,0.512,0.515]],
+[172,"Malawi","MW","Low",[0.299,0.378,0.461,0.498,0.514,0.512,0.509,0.508]],
+[173,"Benin","BJ","Low",[0.35,0.412,0.481,0.509,0.506,0.501,0.502,0.504]],
+[174,"Gambia","GM","Low",[0.323,0.392,0.449,0.467,0.492,0.492,0.49,0.495]],
+[175,"Eritrea","ER","Low",[null,null,0.458,0.473,0.487,0.49,0.49,0.493]],
+[176,"Ethiopia","ET","Low",[null,0.286,0.409,0.455,0.485,0.489,0.489,0.492]],
+[177,"Liberia","LR","Low",[null,0.434,0.46,0.472,0.485,0.483,0.484,0.487]],
+[177,"Madagascar","MG","Low",[null,0.438,0.488,0.499,0.498,0.486,0.484,0.487]],
+[179,"Guinea-Bissau","GW","Low",[null,null,0.441,0.47,0.488,0.482,0.482,0.483]],
+[180,"Congo (Democratic Republic of the)","CD","Low",[0.377,0.376,0.424,0.457,0.476,0.477,0.475,0.481]],
+[181,"Guinea","GN","Low",[0.27,0.345,0.415,0.449,0.47,0.471,0.467,0.471]],
+[182,"Afghanistan","AF","Low",[0.284,0.34,0.449,0.479,0.492,0.488,0.473,0.462]],
+[183,"Mozambique","MZ","Low",[0.239,0.303,0.407,0.445,0.465,0.467,0.459,0.461]],
+[184,"Sierra Leone","SL","Low",[0.314,0.319,0.416,0.438,0.457,0.453,0.456,0.458]],
+[185,"Burkina Faso","BF","Low",[null,0.296,0.372,0.413,0.446,0.446,0.445,0.438]],
+[186,"Yemen","YE","Low",[0.357,0.434,0.496,0.455,0.43,0.43,0.425,0.424]],
+[187,"Burundi","BI","Low",[0.285,0.298,0.404,0.42,0.423,0.419,0.419,0.42]],
+[188,"Mali","ML","Low",[0.236,0.315,0.406,0.409,0.421,0.407,0.408,0.41]],
+[189,"Chad","TD","Low",[null,0.292,0.364,0.388,0.398,0.396,0.393,0.394]],
+[189,"Niger","NE","Low",[0.212,0.26,0.336,0.367,0.39,0.391,0.389,0.394]],
+[191,"Central African Republic","CF","Low",[0.333,0.319,0.357,0.367,0.391,0.389,0.387,0.387]],
+[192,"South Sudan","SS","Low",[null,null,0.406,0.381,0.391,0.386,0.381,0.381]],
+[193,"Somalia","SO","Low",[null,null,null,null,null,null,null,0.38]],
+[0,"Korea (Democratic People's Rep. of)","KP","NA",[null,null,null,null,null,null,null,null]],
+[0,"Monaco","MC","NA",[null,null,null,null,null,null,null,null]],
+[0,"Very high human development","","Very High",[0.785,0.828,0.87,0.889,0.901,0.895,0.896,0.902]],
+[0,"High human development","","High",[0.56,0.626,0.703,0.736,0.76,0.759,0.76,0.764]],
+[0,"Medium human development","","Medium",[0.443,0.497,0.574,0.615,0.635,0.634,0.63,0.64]],
+[0,"Low human development","","Low",[0.354,0.398,0.473,0.501,0.516,0.515,0.515,0.517]],
+[0,"Developing countries","","Medium",[0.513,0.569,0.639,0.672,0.691,0.689,0.688,0.694]],
+[0,"Arab States","","High",[0.55,0.615,0.672,0.691,0.709,0.704,0.704,0.704]],
+[0,"East Asia and the Pacific","","High",[0.507,0.594,0.689,0.728,0.757,0.76,0.761,0.766]],
+[0,"Europe and Central Asia","","Very High",[0.663,0.68,0.746,0.782,0.802,0.792,0.797,0.802]],
+[0,"Latin America and the Caribbean","","High",[0.637,0.686,0.735,0.758,0.768,0.755,0.754,0.763]],
+[0,"South Asia","","Medium",[0.444,0.5,0.574,0.616,0.635,0.635,0.631,0.641]],
+[0,"Sub-Saharan Africa","","Low",[0.404,0.429,0.502,0.533,0.549,0.547,0.546,0.549]],
+[0,"Least developed countries","","Low",[0.354,0.408,0.487,0.518,0.54,0.542,0.54,0.542]],
+[0,"Small island developing states","","High",[0.605,0.65,0.694,0.721,0.731,0.727,0.722,0.73]],
+[0,"Organisation for Economic Co-operation and Development","","Very High",[0.796,0.842,0.878,0.894,0.905,0.897,0.899,0.906]],
+[0,"World","","High",[0.601,0.645,0.698,0.724,0.739,0.736,0.735,0.739]]
+]};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#1c2333;--mut:#64708a;--pri:#2563eb;--bd:#dde3ef;--ok:#dcfce7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Sarabun,'Noto Sans Thai',system-ui,sans-serif;line-height:1.5}
+header{background:linear-gradient(120deg,#1e3a8a,#2563eb 60%,#0ea5e9);color:#fff;padding:22px 16px}
+.wrap{max-width:1200px;margin:0 auto;padding:0 14px}
+header .wrap{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+h1{margin:0;font-size:1.6rem}header p{margin:2px 0 0;opacity:.9}
+main{padding:18px 0 50px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px #0001}
+button,select,input{font:inherit}
+.btn{border:0;border-radius:9px;padding:8px 14px;cursor:pointer;background:var(--pri);color:#fff;font-weight:600}
+.btn.sec{background:#e8edf7;color:var(--ink)}.btn.warn{background:#ef4444}.btn.ok{background:#16a34a}
+.btn:hover{filter:brightness(1.08)}
+.lang{display:flex;border-radius:9px;overflow:hidden;border:1px solid #fff8}
+.lang button{background:transparent;color:#fff;border:0;padding:6px 14px;cursor:pointer}
+.lang button.on{background:#fff;color:#1e3a8a;font-weight:700}
+.sbox{position:relative}
+#q{width:100%;padding:12px 14px;border:2px solid var(--bd);border-radius:10px;font-size:1.05rem}
+#q:focus{outline:0;border-color:var(--pri)}
+#dd{position:absolute;z-index:20;left:0;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid var(--bd);border-radius:10px;max-height:320px;overflow:auto;box-shadow:0 8px 24px #0002;display:none}
+#dd div{padding:8px 14px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+#dd div:hover,#dd div.hl{background:#eaf1ff}#dd small{color:var(--mut)}
+#dd .on{font-weight:700;color:var(--pri)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{background:#eaf1ff;border:1px solid #bcd0fb;border-radius:99px;padding:3px 6px 3px 12px;display:flex;gap:6px;align-items:center}
+.chip b{cursor:pointer;background:#c9d9fb;border-radius:50%;width:20px;height:20px;text-align:center;line-height:20px;font-size:.8rem}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:10px}
+.bar .g{display:flex;gap:8px;flex-wrap:wrap}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:420px}
+th,td{border:1px solid var(--bd);padding:7px 12px;text-align:right;white-space:nowrap}
+th{background:#1e3a8a;color:#fff}td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:#f1f5fd;color:var(--ink);font-weight:600}
+th:first-child{background:#1e3a8a;color:#fff}
+td.best{background:var(--ok);font-weight:700}
+.cap{color:var(--mut);font-size:.93rem;margin:10px 0 0}
+.empty{text-align:center;color:var(--mut);padding:30px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:16px}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+.ch h3{margin:0 0 2px;font-size:1.05rem}.ch p{margin:0 0 8px;color:var(--mut);font-size:.88rem}
+.ctl{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;font-size:.9rem}
+.ctl select,.ctl input{padding:4px 6px;border:1px solid var(--bd);border-radius:7px}.ctl input{width:56px}
+.cv{position:relative;height:380px}
+.dpanel{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.dpanel h2{margin:0;font-size:1.05rem;flex:0 0 auto}
+.dpanel select,.dpanel input[type=text]{padding:6px 8px;border:1px solid var(--bd);border-radius:8px;background:#fff}
+.dpanel input[type=text]{min-width:240px}
+.dpanel label{display:flex;gap:6px;align-items:center;font-size:.92rem;color:var(--mut)}
+.dpanel a{color:var(--pri);font-size:.9rem}
+.dstat{margin-top:10px;padding:9px 12px;border-radius:9px;background:#eef2fa;font-size:.93rem}
+.dstat.good{background:#ecfdf3;color:#14532d}.dstat.warn{background:#fff7e6;color:#7c4a03}
+.dstat small{display:block;opacity:.8;word-break:break-word}.dstat .new{font-weight:700;margin-top:4px}
+.btn:disabled{opacity:.55;cursor:wait}
+tr.sec td{background:#1e3a8a14!important;color:#1e3a8a;font-weight:700;text-align:left;position:static}
+tr.dim td:first-child{background:#f3f7ff}
+.cyl{display:flex;gap:6px;align-items:center;font-size:.92rem;color:var(--mut)}.cyl select,.ctl .xs{padding:5px 8px;border:1px solid var(--bd);border-radius:8px;background:#fff;font-weight:600}
+@media(max-width:560px){.dpanel input[type=text]{min-width:0;width:100%}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<div><h1 data-i="title"></h1><p data-i="sub"></p></div>
+<div class="lang"><button id="bth">ไทย</button><button id="ben">English</button></div>
+</div></header>
+<main class="wrap">
+<section class="card">
+<div class="dpanel">
+<h2 data-i="dTitle"></h2>
+<select id="dsrc" aria-label="source"></select>
+<input type="text" id="dkey" autocomplete="off" spellcheck="false">
+<button class="btn" id="bup" data-i="upd"></button>
+<button class="btn sec" id="bimp" data-i="imp"></button><input type="file" id="dfile" accept=".csv,.json,text/csv,application/json" hidden>
+<a id="dl" target="_blank" rel="noopener"></a>
+<label><span data-i="yv"></span><select id="dym"></select></label>
+</div>
+<div class="dstat" id="dstat"></div>
+</section>
+<section class="card">
+<div class="sbox"><input id="q" autocomplete="off"><div id="dd"></div></div>
+<div class="chips" id="chips"></div>
+<div class="bar" style="margin:14px 0 0">
+<div class="g"><button class="btn" id="bch" data-i="showCh"></button></div>
+<button class="btn warn" id="brs" data-i="reset"></button>
+</div>
+</section>
+<section class="card" id="tcard">
+<div class="bar"><h2 style="margin:0;font-size:1.2rem" data-i="tTitle"></h2>
+<div class="g"><label class="cyl" id="cyl"><span data-i="cyL"></span><select id="cyr"></select></label><button class="btn ok" id="bxl" data-i="xl"></button></div></div>
+<div class="tw" id="tbl"></div>
+<p class="cap" id="cap"></p>
+</section>
+<section id="charts" style="display:none"><div class="grid" id="grid"></div></section>
+<p class="cap" data-i="src"></p>
+</main>
+<script>
+/* =====================================================================
+   LIVE DATA — ดึงข้อมูล HDI จริงจากฐานข้อมูลออนไลน์ แล้วอัปเดตอัตโนมัติ
+   ลำดับการลอง (โหมดอัตโนมัติ):
+     1) Our World in Data  — สำเนาชุดข้อมูล UNDP HDR ที่อัปเดตตาม UNDP ทุกปี, เปิด CORS, ไม่ต้องใช้คีย์
+     2) UNDP HDR (ไฟล์ทางการ) — HDR{yy}_Composite_indices_complete_time_series.csv (ลองฉบับใหม่ก่อน)
+   ทางเลือกอื่น: HDRO Data API (ต้องมี API key ฟรีจาก hdrdata.org) หรือ นำเข้าไฟล์ CSV เอง
+   ถ้าออฟไลน์/ดึงไม่ได้ → ใช้ข้อมูลที่แคชไว้ในเบราว์เซอร์ หรือ HDI_DATA ที่ฝังในไฟล์
+   ===================================================================== */
+const ISO3='ABWAW,AFGAF,AGOAO,AIAAI,ALAAX,ALBAL,ANDAD,AREAE,ARGAR,ARMAM,ASMAS,ATAAQ,ATFTF,ATGAG,AUSAU,AUTAT,AZEAZ,BDIBI,BELBE,BENBJ,BESBQ,BFABF,BGDBD,BGRBG,BHRBH,BHSBS,BIHBA,BLMBL,BLRBY,BLZBZ,BMUBM,BOLBO,BRABR,BRBBB,BRNBN,BTNBT,BVTBV,BWABW,CAFCF,CANCA,CCKCC,CHECH,CHLCL,CHNCN,CIVCI,CMRCM,CODCD,COGCG,COKCK,COLCO,COMKM,CPVCV,CRICR,CUBCU,CUWCW,CXRCX,CYMKY,CYPCY,CZECZ,DEUDE,DJIDJ,DMADM,DNKDK,DOMDO,DZADZ,ECUEC,EGYEG,ERIER,ESHEH,ESPES,ESTEE,ETHET,FINFI,FJIFJ,FLKFK,FRAFR,FROFO,FSMFM,GABGA,GBRGB,GEOGE,GGYGG,GHAGH,GIBGI,GINGN,GLPGP,GMBGM,GNBGW,GNQGQ,GRCGR,GRDGD,GRLGL,GTMGT,GUFGF,GUMGU,GUYGY,HKGHK,HMDHM,HNDHN,HRVHR,HTIHT,HUNHU,IDNID,IMNIM,INDIN,IOTIO,IRLIE,IRNIR,IRQIQ,ISLIS,ISRIL,ITAIT,JAMJM,JEYJE,JORJO,JPNJP,KAZKZ,KENKE,KGZKG,KHMKH,KIRKI,KNAKN,KORKR,KWTKW,LAOLA,LBNLB,LBRLR,LBYLY,LCALC,LIELI,LKALK,LSOLS,LTULT,LUXLU,LVALV,MACMO,MAFMF,MARMA,MCOMC,MDAMD,MDGMG,MDVMV,MEXMX,MHLMH,MKDMK,MLIML,MLTMT,MMRMM,MNEME,MNGMN,MNPMP,MOZMZ,MRTMR,MSRMS,MTQMQ,MUSMU,MWIMW,MYSMY,MYTYT,NAMNA,NCLNC,NERNE,NFKNF,NGANG,NICNI,NIUNU,NLDNL,NORNO,NPLNP,NRUNR,NZLNZ,OMNOM,PAKPK,PANPA,PCNPN,PERPE,PHLPH,PLWPW,PNGPG,POLPL,PRIPR,PRKKP,PRTPT,PRYPY,PSEPS,PYFPF,QATQA,REURE,ROURO,RUSRU,RWARW,SAUSA,SDNSD,SENSN,SGPSG,SGSGS,SHNSH,SJMSJ,SLBSB,SLESL,SLVSV,SMRSM,SOMSO,SPMPM,SRBRS,SSDSS,STPST,SURSR,SVKSK,SVNSI,SWESE,SWZSZ,SXMSX,SYCSC,SYRSY,TCATC,TCDTD,TGOTG,THATH,TJKTJ,TKLTK,TKMTM,TLSTL,TONTO,TTOTT,TUNTN,TURTR,TUVTV,TWNTW,TZATZ,UGAUG,UKRUA,UMIUM,URYUY,USAUS,UZBUZ,VATVA,VCTVC,VENVE,VGBVG,VIRVI,VNMVN,VUTVU,WLFWF,WSMWS,YEMYE,ZAFZA,ZMBZM,ZWEZW';
+const I32={};ISO3.split(',').forEach(s=>I32[s.slice(0,3)]=s.slice(3));
+Object.assign(I32,{XKX:'XK',KSV:'XK',OWID_KOS:'XK'});
+const EMB_NAME={};HDI_DATA.rows.forEach(r=>{if(r[2])EMB_NAME[r[2]]=r[1]});
+const G_ALIAS={'OECD':'Organisation for Economic Co-operation and Development','Small island developing states (SIDS)':'Small island developing states','Least developed countries (LDCs)':'Least developed countries'};
+const OWID_URL='https://ourworldindata.org/grapher/human-development-index.csv?v=1&csvType=full&useColumnShortNames=false';
+const UNDP_PAGE='https://hdr.undp.org/data-center/documentation-and-downloads';
+const undpUrls=()=>{const u=[],now=new Date().getFullYear();for(let y=now+1;y>=2025;y--)u.push(`https://hdr.undp.org/sites/default/files/${y}_HDR/HDR${String(y).slice(2)}_Composite_indices_complete_time_series.csv`);return u};
+const IND=['le','eys','mys','gni'];
+const OWQ='.csv?v=1&csvType=full&useColumnShortNames=false';
+const OWID_COMP={le:'https://ourworldindata.org/grapher/life-expectancy-unwpp'+OWQ,
+  eys:'https://ourworldindata.org/grapher/years-of-schooling'+OWQ+'&level=all&metric_type=expected_years_schooling&sex=both',
+  mys:'https://ourworldindata.org/grapher/years-of-schooling'+OWQ+'&level=all&metric_type=average_years_schooling&sex=both',
+  gni:'https://ourworldindata.org/grapher/gross-national-income-per-capita-undp'+OWQ};
+const API_URL=k=>{const ys=[];for(let y=1990;y<=new Date().getFullYear();y++)ys.push(y);return `https://hdrdata.org/api/CompositeIndices/query?apikey=${encodeURIComponent(k)}&indicator=hdi,le,eys,mys,gnipc&year=${ys.join(',')}`};
+const CK='hdiExplorer.cache.v3',PK='hdiExplorer.prefs.v2',MAX_AGE=24*3600e3,POLL=6*3600e3;
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+const tierOf=v=>v==null?'NA':v>=.8?'Very High':v>=.7?'High':v>=.55?'Medium':'Low';
+
+function parseCSV(txt){
+  txt=txt.replace(/^﻿/,'');const out=[];let row=[],f='',q=false;
+  for(let i=0;i<txt.length;i++){const ch=txt[i];
+    if(q){if(ch==='"'){if(txt[i+1]==='"'){f+='"';i++}else q=false}else f+=ch}
+    else if(ch==='"')q=true;else if(ch===','){row.push(f);f=''}
+    else if(ch==='\n'){row.push(f);out.push(row);row=[];f=''}else if(ch!=='\r')f+=ch}
+  if(f||row.length){row.push(f);out.push(row)}
+  return out.filter(r=>r.length>1||r[0]);
+}
+const num=s=>{if(s==null||s==='')return null;const v=+s;return isFinite(v)?v:null};
+/* ent: {n, c(ISO2 or ''), y:{year:value}, rk?} */
+function addEnt(M,name,iso3,year,val,rk,ind='hdi'){
+  const c=I32[iso3]||'';const isG=!c;
+  let n=isG?name.replace(/\s*\(UNDP\)\s*$/,'').trim():(EMB_NAME[c]||name);
+  if(isG)n=G_ALIAS[n]||n;
+  const k=c||n;const e=M.get(k)||{n,c,y:{},m:{}};
+  if(ind==='hdi')e.h=true;
+  if(year!=null&&val!=null){if(ind==='hdi')e.y[year]=val;else(e.m[ind]||(e.m[ind]={}))[year]=val}
+  if(rk)e.rk=rk;M.set(k,e);
+}
+function fromOWID(R,M=new Map(),ind='hdi'){
+  const h=R[0].map(s=>s.toLowerCase().trim());
+  const iE=h.indexOf('entity'),iC=h.indexOf('code'),iY=h.indexOf('year');
+  const iV=h.findIndex((s,i)=>i!==iE&&i!==iC&&i!==iY&&!/annotation|region/.test(s));
+  if(iE<0||iY<0||iV<0)throw new Error('OWID: รูปแบบคอลัมน์ไม่ถูกต้อง');
+  R.slice(1).forEach(r=>{const y=+r[iY];if(y>=1990&&y<=new Date().getFullYear())addEnt(M,r[iE],r[iC],y,num(r[iV]),null,ind)});
+  return M;
+}
+function fromUNDP(R){
+  const h=R[0].map(s=>s.toLowerCase().trim());
+  const iI=h.indexOf('iso3'),iN=h.indexOf('country');
+  const yc=[];h.forEach((s,i)=>{const m=s.match(/^(hdi|le|eys|mys|gnipc)_(\d{4})$/);if(m)yc.push([+m[2],i,m[1]==='gnipc'?'gni':m[1]])});
+  const rc=h.map((s,i)=>[s.match(/^hdi_rank(?:_(\d{4}))?$/),i]).filter(x=>x[0]).sort((a,b)=>(+b[0][1]||0)-(+a[0][1]||0))[0];
+  const M=new Map();
+  R.slice(1).forEach(r=>{const iso=(r[iI]||'').trim();if(!iso)return;
+    const g=/^ZZ/.test(iso);
+    yc.forEach(([y,i,k])=>addEnt(M,r[iN],g?'':iso,y,num(r[i]),null,k));
+    addEnt(M,r[iN],g?'':iso,null,null,rc?num(r[rc[1]]):null)});
+  return [...M.values()];
+}
+function fromAPI(J){
+  const arr=Array.isArray(J)?J:(J.data||J.results||J.items||[]);if(!arr.length)throw new Error('API: ไม่มีข้อมูล');
+  const ks=Object.keys(arr[0]);const f=re=>ks.find(k=>re.test(k));
+  const kI=f(/iso/i),kN=ks.find(k=>/country|name/i.test(k)&&!/iso|code/i.test(k)),kY=f(/^year/i),kV=f(/^value/i),kInd=f(/^indicator/i);
+  const M=new Map();
+  const which=x=>{x=String(x).toLowerCase();const c=(x.match(/^\s*([a-z]+)\b/)||[])[1];
+    if(c&&{hdi:1,le:1,eys:1,mys:1,gnipc:1}[c])return c==='gnipc'?'gni':c;
+    return /human development index/.test(x)?'hdi':/life expectancy/.test(x)?'le':/expected years/.test(x)?'eys':/mean years/.test(x)?'mys':/gross national income/.test(x)?'gni':null};
+  arr.forEach(o=>{const ind=kInd?which(o[kInd]):'hdi';if(!ind)return;
+    addEnt(M,o[kN]||o[kI],o[kI],+o[kY],num(o[kV]),null,ind)});
+  return [...M.values()];
+}
+function toModel(ents,src){
+  const cnt={};ents.forEach(e=>{if(e.c)Object.keys(e.y).forEach(y=>cnt[y]=(cnt[y]||0)+1)});
+  const years=Object.keys(cnt).map(Number).filter(y=>cnt[y]>=50).sort((a,b)=>a-b);
+  if(years.length<2)throw new Error('รูปแบบข้อมูลไม่ถูกต้อง หรือมีข้อมูลน้อยเกินไป');
+  const LYv=years[years.length-1];
+  let rows=ents.filter(e=>years.some(y=>e.y[y]!=null)||(e.c&&e.h)).map(e=>{const ind={};
+    IND.forEach(k=>{const a=years.map(y=>e.m&&e.m[k]?e.m[k][y]??null:null);if(a.some(v=>v!=null))ind[k]=a});
+    return {n:e.n,c:e.c,v:years.map(y=>e.y[y]??null),rk:e.rk||0,ind}});
+  const C=rows.filter(r=>r.c&&r.v[years.length-1]!=null);
+  if(!C.some(r=>r.rk)){const s=[...C].sort((a,b)=>b.v.at(-1)-a.v.at(-1));
+    s.forEach((r,i)=>{r.rk=i&&s[i-1].v.at(-1).toFixed(3)===r.v.at(-1).toFixed(3)?s[i-1].rk:i+1})}
+  rows.forEach(r=>{const lv=r.v.at(-1);r.t=tierOf(lv);if(!r.c||lv==null)r.rk=r.rk&&r.c?r.rk:0});
+  rows.sort((a,b)=>(!!b.c-!!a.c)||((a.rk||999)-(b.rk||999))||a.n.localeCompare(b.n));
+  return {years,rows,src:Object.assign({ts:Date.now(),latest:LYv},src)};
+}
+function parseAny(text,src){
+  const s=text.trim();
+  if(s[0]==='['||s[0]==='{')return toModel(fromAPI(JSON.parse(s)),src);
+  const R=parseCSV(s);const h=R[0].map(x=>x.toLowerCase().trim());
+  if(h.includes('iso3')&&h.some(x=>/^hdi_\d{4}$/.test(x)))return toModel(fromUNDP(R),src);
+  if(h.includes('entity')&&h.includes('year'))return toModel([...fromOWID(R).values()],src);
+  throw new Error('ไม่รู้จักรูปแบบไฟล์ (รองรับ CSV ของ UNDP HDR / Our World in Data / JSON จาก HDRO API)');
+}
+const embModel=()=>({years:HDI_DATA.years.slice(),rows:HDI_DATA.rows.map(([rk,n,c,t,v])=>({rk,n,c,t,v:v.slice(),ind:{}})),src:{id:'emb',ts:0,latest:HDI_DATA.years.at(-1)}});
+async function fetchText(url,ms=30000){
+  const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),ms);
+  try{const r=await fetch(url,{signal:ac.signal,cache:'no-cache'});if(!r.ok)throw new Error('HTTP '+r.status);return await r.text()}
+  finally{clearTimeout(tm)}
+}
+async function fetchOWID(){
+  const M=fromOWID(parseCSV(await fetchText(OWID_URL)));
+  const res=await Promise.allSettled(IND.map(k=>fetchText(OWID_COMP[k],45000).then(tx=>fromOWID(parseCSV(tx),M,k))));
+  const m=toModel([...M.values()],{id:'owid',url:OWID_URL});
+  m.src.compFail=IND.filter((k,i)=>res[i].status==='rejected');
+  return m;
+}
+async function fetchSource(id){
+  const errs=[];
+  const tries=id==='owid'?[['owid',OWID_URL]]:id==='undp'?undpUrls().map(u=>['undp',u]):id==='api'?[['api',API_URL(prefs.key||'')]]:[['owid',OWID_URL],...undpUrls().map(u=>['undp',u])];
+  if(id==='api'&&!prefs.key)throw new Error(T[lang].needKey);
+  for(const [sid,url] of tries){
+    try{if(sid==='owid')return await fetchOWID();
+      const txt=await fetchText(url);return parseAny(txt,{id:sid,url:sid==='api'?'https://hdrdata.org':url})}
+    catch(e){errs.push(`${sid}: ${e.name==='AbortError'?'timeout':e.message}`)}
+  }
+  throw new Error([...new Set(errs)].join(' | '));
+}
+
+/* ---------- state ---------- */
+let MODEL=embModel(),YRS=[],YI=[],L=0,FY=0,LY=0,D=[],WORLD=null,NC=0,HASC=false,COMPY=[],cyear=null;
+const cap1=x=>Math.min(1,Math.max(0,x));
+/* ดัชนีย่อยตามวิธีของ UNDP (HDR Technical Notes): สุขภาพ 20–85 ปี, การศึกษา MYS/15 + EYS/18, รายได้ ln(100)–ln(75,000) PPP$ 2021 */
+function dimsOf(r,n){
+  const g=k=>(r.ind&&r.ind[k])||Array(n).fill(null);const le=g('le'),eys=g('eys'),mys=g('mys'),gni=g('gni');
+  const r3=x=>+x.toFixed(3);
+  return {le,eys,mys,gni,
+    hi:le.map(v=>v==null?null:r3(cap1((v-20)/65))),
+    ei:eys.map((v,i)=>v==null||mys[i]==null?null:r3((cap1(mys[i]/15)+cap1(v/18))/2)),
+    ii:gni.map(v=>v==null||v<=0?null:r3(cap1((Math.log(v)-Math.log(100))/(Math.log(75000)-Math.log(100)))))};
+}
+const compIdx=()=>{const i=MODEL.years.indexOf(cyear);return i>=0?i:MODEL.years.indexOf(COMPY[0]??MODEL.years.at(-1))};
+let lang='th',sel=[],show=false,charts=[],LS={},status={k:'emb'},busy=false;
+let prefs=Object.assign({src:'auto',ym:'key',key:''},store.get(PK)||{});
+const savePrefs=()=>store.set(PK,prefs);
+function pickYears(all){
+  const last=all.at(-1);
+  if(prefs.ym==='all')return all.slice();
+  if(prefs.ym==='five')return all.filter((y,i)=>i===0||y%5===0||y===last);
+  const s=new Set([all[0],...all.filter(y=>[2000,2010,2015].includes(y)),...all.slice(-5)]);
+  return all.filter(y=>s.has(y));
+}
+function applyModel(m){
+  const key=d=>d.c||d.n,keep=sel.map(key);
+  MODEL=m;YRS=pickYears(m.years);const idx=YI=YRS.map(y=>m.years.indexOf(y));
+  L=YRS.length-1;FY=YRS[0];LY=YRS[L];
+  D=m.rows.map(r=>({rk:r.rk,n:r.n,c:r.c,t:r.t,v:idx.map(i=>r.v[i]),all:r.v,cp:dimsOf(r,m.years.length)}));
+  COMPY=m.years.filter((y,i)=>D.filter(d=>d.c&&d.cp.hi[i]!=null&&d.cp.ei[i]!=null&&d.cp.ii[i]!=null).length>=50).reverse();
+  HASC=COMPY.length>0;if(!COMPY.includes(cyear))cyear=COMPY[0]??null;
+  WORLD=D.find(d=>d.n==='World')||null;NC=D.filter(d=>d.c&&d.v.some(v=>v!=null)).length;
+  sel=keep.map(k=>D.find(d=>key(d)===k)).filter(Boolean);
+}
+async function update(force,id=prefs.src){
+  if(busy)return;busy=true;status={k:'load'};renderStatus();
+  const prevLatest=MODEL.src.latest,prevEmb=MODEL.src.id==='emb';
+  try{
+    const m=await fetchSource(id);
+    applyModel(m);store.set(CK,m);
+    status={k:'ok',nw:!prevEmb&&m.src.latest>prevLatest?m.src.latest:0};
+    applyLang();
+  }catch(e){status={k:MODEL.src.id==='emb'?'emb':'cache',err:e.message};renderStatus()}
+  finally{busy=false}
+}
+async function importFile(file){
+  try{const txt=await file.text();const m=parseAny(txt,{id:'file',url:file.name});applyModel(m);store.set(CK,m);status={k:'ok'};applyLang()}
+  catch(e){status={k:MODEL.src.id==='emb'?'emb':'cache',err:e.message};renderStatus()}
+}
+
+const TH_G={'Very high human development':'กลุ่มพัฒนามนุษย์สูงมาก','High human development':'กลุ่มพัฒนามนุษย์สูง','Medium human development':'กลุ่มพัฒนามนุษย์ปานกลาง','Low human development':'กลุ่มพัฒนามนุษย์ต่ำ','Developing countries':'ประเทศกำลังพัฒนา','Arab States':'รัฐอาหรับ','East Asia and the Pacific':'เอเชียตะวันออกและแปซิฟิก','Europe and Central Asia':'ยุโรปและเอเชียกลาง','Latin America and the Caribbean':'ละตินอเมริกาและแคริบเบียน','South Asia':'เอเชียใต้','Sub-Saharan Africa':'แอฟริกาใต้ซาฮารา','Least developed countries':'ประเทศพัฒนาน้อยที่สุด','Small island developing states':'รัฐเกาะเล็กที่กำลังพัฒนา','Organisation for Economic Co-operation and Development':'กลุ่ม OECD','World':'ทั่วโลก'};
+const TIER={'Very High':['สูงมาก','Very high'],'High':['สูง','High'],'Medium':['ปานกลาง','Medium'],'Low':['ต่ำ','Low']};
+const T={th:{title:'ดัชนีการพัฒนามนุษย์ (HDI)',sub:'เปรียบเทียบข้อมูล HDI ของประเทศทั่วโลก ปี {f}–{l}',ph:'พิมพ์ชื่อประเทศ (ไทยหรืออังกฤษ) เช่น "ก" หรือ "T"…',sel:'เลือกแล้ว',none:'ยังไม่ได้เลือกประเทศ — พิมพ์ในช่องค้นหาด้านบนเพื่อเริ่มต้น',showCh:'📊 แสดงกราฟ',hideCh:'🙈 ซ่อนกราฟ',reset:'↺ รีเซ็ตหน้า',xl:'⬇ บันทึกเป็น Excel',tTitle:'ตารางข้อมูล HDI',rRank:'อันดับ HDI ปี {l}',rTier:'กลุ่มการพัฒนา',rHDI:'HDI',rChg:'เปลี่ยนแปลง {f}→{l}',rGr:'เติบโตเฉลี่ย/ปี {f}–{l} (%)',grp:'กลุ่ม',nf:'ไม่พบข้อมูล',
+cap:'คำอธิบาย: HDI เป็นดัชนีรวม 3 มิติ (สุขภาพและอายุยืน การศึกษา และรายได้) มีค่า 0–1 ยิ่งใกล้ 1 ยิ่งพัฒนาสูง เกณฑ์: ต่ำกว่า 0.550 = ต่ำ, 0.550–0.699 = ปานกลาง, 0.700–0.799 = สูง, 0.800 ขึ้นไป = สูงมาก แถว "เปลี่ยนแปลง" = HDI {l} − HDI {f} และ "เติบโตเฉลี่ย" คิดเป็นอัตราทบต้นต่อปี ช่องสีเขียว = ค่าสูงสุดในแถว (เมื่อเลือกหลายประเทศ) เครื่องหมาย – = ไม่มีข้อมูล',
+src:'แหล่งข้อมูล: UNDP Human Development Report (CC-BY) ผ่าน {s} ครอบคลุม {n} ประเทศ/ดินแดน พร้อมกลุ่มภูมิภาคและค่าเฉลี่ยโลก ข้อมูลรายปี {a}–{z} (ตารางแสดงปี: {y}) หมายเหตุ: UNDP คำนวณค่าย้อนหลังใหม่ทุกฉบับ ค่าเก่าจึงอาจต่างจากรายงานฉบับก่อนเล็กน้อย',
+png:'⬇ PNG',lab:'ตัวเลข:',off:'ไม่แสดง',all:'แสดงทั้งหมด',latest:'เฉพาะปีล่าสุด',nth:'ทุกๆ N จุด',
+c1:['แนวโน้ม HDI ตามเวลา','กราฟเส้นแสดงการเปลี่ยนแปลง HDI {f}–{l}'],c2:['HDI เปรียบเทียบรายปี','กราฟแท่งกลุ่มแยกตามปี'],c3:['HDI ปี {l} (เรียงลำดับ)','เปรียบเทียบค่า HDI ล่าสุด'],c4:['การเปลี่ยนแปลง HDI {f}→{l}','ผลต่างของ HDI'],c5:['อัตราเติบโตเฉลี่ยต่อปี (%)','แยกตามช่วงเวลา'],c6:['เรดาร์ HDI ตามปี','เปรียบเทียบรูปร่างการพัฒนาในแต่ละปี'],c7:['HDI {f} เทียบ {l}','จุดเหนือเส้นประ = พัฒนาขึ้นจากปี {f}'],c8:['ส่วนต่างจากค่าเฉลี่ยโลก','ค่าบวก = สูงกว่าค่าเฉลี่ยโลก'],
+xF:'HDI ปี {f}',yL:'HDI ปี {l}',
+secC:'องค์ประกอบและคะแนนดัชนีย่อยของ HDI ปี {c}',cyL:'ปีขององค์ประกอบ:',
+i_le:'อายุคาดเฉลี่ยเมื่อแรกเกิด (ปี)',i_eys:'จำนวนปีการศึกษาที่คาดหวัง (ปี)',i_mys:'จำนวนปีการศึกษาเฉลี่ย (ปี)',i_gni:'รายได้ประชาชาติต่อหัว GNI (PPP$ 2021)',i_hi:'คะแนนดัชนีสุขภาพ (0–1)',i_ei:'คะแนนดัชนีการศึกษา (0–1)',i_ii:'คะแนนดัชนีรายได้ (0–1)',i_low:'มิติที่ต่ำที่สุด',
+d_hi:'สุขภาพ',d_ei:'การศึกษา',d_ii:'รายได้',
+c9:['ดัชนีย่อย 3 มิติ ปี {c}','รูปร่างการพัฒนา: สุขภาพ · การศึกษา · รายได้ (0–1)'],c10:['คะแนนดัชนีย่อยรายประเทศ ปี {c}','แท่งที่ต่ำที่สุดคือมิติที่ฉุด HDI ลง'],c11:['แนวโน้มตัวชี้วัดตามเวลา','เลือกตัวชี้วัดได้จากเมนูด้านล่าง'],c12:['เปรียบเทียบตัวชี้วัด ปี {c}','เลือกตัวชี้วัดได้จากเมนูด้านล่าง'],c13:['รายได้ vs อายุคาดเฉลี่ย ปี {c}','แกน X แบบลอการิทึม · ขนาดวง = ดัชนีการศึกษา'],
+capC:'วิธีคำนวณคะแนนดัชนีย่อย (ตาม UNDP Technical Notes): ดัชนีสุขภาพ = (อายุคาดเฉลี่ย − 20) ÷ (85 − 20); ดัชนีการศึกษา = [ (ปีการศึกษาเฉลี่ย ÷ 15) + (ปีการศึกษาที่คาดหวัง ÷ 18) ] ÷ 2; ดัชนีรายได้ = [ ln(GNI ต่อหัว) − ln(100) ] ÷ [ ln(75,000) − ln(100) ]; HDI = รากที่สามของ (ดัชนีสุขภาพ × ดัชนีการศึกษา × ดัชนีรายได้) ค่าที่คำนวณอาจต่างจาก HDI ทางการที่หลักทศนิยมสุดท้ายเพราะการปัดเศษ ข้อมูลอายุคาดเฉลี่ยจาก OWID มาจาก UN World Population Prospects ซึ่งเป็นแหล่งที่ UNDP ใช้',
+noComp:'แหล่งข้อมูลปัจจุบันยังไม่มีข้อมูลองค์ประกอบ (อายุคาดเฉลี่ย การศึกษา รายได้) — กด "อัปเดตข้อมูลตอนนี้" เพื่อดึงข้อมูลออนไลน์ หรือนำเข้าไฟล์ CSV ของ UNDP',stComp:'ดึงตัวชี้วัดบางรายการไม่สำเร็จ: ',
+dTitle:'แหล่งข้อมูล',upd:'🔄 อัปเดตข้อมูลตอนนี้',imp:'📂 นำเข้าไฟล์ CSV/JSON',dl:'ดาวน์โหลด CSV ทางการจาก UNDP ↗',
+sAuto:'อัตโนมัติ (OWID → UNDP)',sOwid:'Our World in Data',sUndp:'UNDP HDR (ไฟล์ทางการ)',sApi:'HDRO Data API (ต้องมีคีย์)',kPh:'วาง API key จาก hdrdata.org',
+yv:'ปีที่แสดงในตาราง/กราฟ:',yKey:'ปีหลัก + 5 ปีล่าสุด',yFive:'ทุก 5 ปี',yAll:'ทุกปี',
+stLoad:'⏳ กำลังดึงข้อมูลล่าสุดจากฐานข้อมูลออนไลน์…',stOk:'✅ ข้อมูลออนไลน์ล่าสุดถึงปี {z} · ที่มา: {s} · ดึงเมื่อ {u} · ตรวจสอบอัตโนมัติทุก 6 ชม.',stCache:'💾 ใช้ข้อมูลที่บันทึกไว้ (ถึงปี {z}, ดึงเมื่อ {u})',stEmb:'📦 ใช้ข้อมูลสำรองที่ฝังในไฟล์ (ถึงปี {z})',stErr:'— เชื่อมต่อออนไลน์ไม่สำเร็จ: ',stNew:'🎉 พบข้อมูลปีใหม่! ตอนนี้มีถึงปี {z}',
+needKey:'กรุณาใส่ API key ก่อน (สมัครฟรีที่ hdrdata.org)',nEmb:'ข้อมูลฝังในไฟล์',nFile:'ไฟล์ที่นำเข้า'},
+en:{title:'Human Development Index (HDI)',sub:'Compare HDI data of countries worldwide, {f}–{l}',ph:'Type a country name (English or Thai), e.g. "T" or "ก"…',sel:'Selected',none:'No country selected — type in the search box above to begin',showCh:'📊 Show charts',hideCh:'🙈 Hide charts',reset:'↺ Reset page',xl:'⬇ Save as Excel',tTitle:'HDI data table',rRank:'HDI rank {l}',rTier:'Development tier',rHDI:'HDI',rChg:'Change {f}→{l}',rGr:'Avg. annual growth {f}–{l} (%)',grp:'Group',nf:'No match',
+cap:'Notes: HDI is a composite of 3 dimensions (health & longevity, education, income) scaled 0–1; closer to 1 means higher development. Tiers: below 0.550 = Low, 0.550–0.699 = Medium, 0.700–0.799 = High, 0.800+ = Very high. "Change" = HDI {l} − HDI {f}; "Avg. growth" is the compound annual rate. Green cell = highest in row (when several countries are selected). "–" = no data.',
+src:'Source: UNDP Human Development Report (CC-BY) via {s}. Covers {n} countries/territories plus regional groups and the world average. Annual data {a}–{z} (table shows: {y}). Note: UNDP recalculates the whole back-series in every edition, so older values can differ slightly from earlier reports.',
+png:'⬇ PNG',lab:'Labels:',off:'Hidden',all:'Show all',latest:'Latest year only',nth:'Every Nth point',
+c1:['HDI trend over time','Line chart of HDI {f}–{l}'],c2:['HDI by year','Grouped bars by year'],c3:['HDI {l} (sorted)','Latest HDI comparison'],c4:['HDI change {f}→{l}','Difference in HDI'],c5:['Average annual growth (%)','By period'],c6:['HDI radar by year','Shape of development across years'],c7:['HDI {f} vs {l}','Above the dashed line = improved since {f}'],c8:['Gap vs world average','Positive = above world average'],
+xF:'HDI {f}',yL:'HDI {l}',
+secC:'HDI components and dimension index scores, {c}',cyL:'Component year:',
+i_le:'Life expectancy at birth (years)',i_eys:'Expected years of schooling',i_mys:'Mean years of schooling',i_gni:'GNI per capita (2021 PPP$)',i_hi:'Health index score (0–1)',i_ei:'Education index score (0–1)',i_ii:'Income index score (0–1)',i_low:'Weakest dimension',
+d_hi:'Health',d_ei:'Education',d_ii:'Income',
+c9:['3 dimension indices, {c}','Shape of development: health · education · income (0–1)'],c10:['Dimension index scores by country, {c}','The lowest bar is the dimension holding HDI back'],c11:['Indicator trend over time','Pick an indicator from the menu below'],c12:['Indicator comparison, {c}','Pick an indicator from the menu below'],c13:['Income vs life expectancy, {c}','Log X axis · bubble size = education index'],
+capC:'Dimension index method (UNDP Technical Notes): Health index = (life expectancy − 20) ÷ (85 − 20); Education index = [(mean years of schooling ÷ 15) + (expected years of schooling ÷ 18)] ÷ 2; Income index = [ln(GNI per capita) − ln(100)] ÷ [ln(75,000) − ln(100)]; HDI = cube root of (health × education × income). Recomputed values can differ from the official HDI in the last decimal due to rounding. Life expectancy from OWID comes from UN World Population Prospects, the source UNDP uses.',
+noComp:'The current data source has no component data (life expectancy, schooling, income) — press "Update data now" to fetch online data, or import a UNDP CSV file.',stComp:'Some indicators could not be fetched: ',
+dTitle:'Data source',upd:'🔄 Update data now',imp:'📂 Import CSV/JSON file',dl:'Download official CSV from UNDP ↗',
+sAuto:'Automatic (OWID → UNDP)',sOwid:'Our World in Data',sUndp:'UNDP HDR (official file)',sApi:'HDRO Data API (key required)',kPh:'Paste API key from hdrdata.org',
+yv:'Years shown in table/charts:',yKey:'Key years + last 5',yFive:'Every 5 years',yAll:'Every year',
+stLoad:'⏳ Fetching the latest data from the online database…',stOk:'✅ Live data up to {z} · source: {s} · fetched {u} · auto-checks every 6 h',stCache:'💾 Using saved data (up to {z}, fetched {u})',stEmb:'📦 Using the backup data embedded in this file (up to {z})',stErr:'— could not reach online source: ',stNew:'🎉 New year of data found! Now up to {z}',
+needKey:'Please enter an API key first (free sign-up at hdrdata.org)',nEmb:'embedded data',nFile:'imported file'}};
+const srcName=()=>{const s=MODEL.src;return s.id==='owid'?'Our World in Data':s.id==='undp'?'UNDP HDR':s.id==='api'?'HDRO Data API':s.id==='file'?T[lang].nFile+' ('+s.url+')':T[lang].nEmb};
+const sub=s=>s.replace(/\{f\}/g,FY).replace(/\{l\}/g,LY).replace(/\{n\}/g,NC).replace(/\{y\}/g,YRS.join(', ')).replace(/\{a\}/g,MODEL.years[0]).replace(/\{z\}/g,MODEL.years.at(-1)).replace(/\{s\}/g,srcName()).replace(/\{c\}/g,MODEL.years[compIdx()]??'–').replace(/\{u\}/g,MODEL.src.ts?new Date(MODEL.src.ts).toLocaleString(lang==='th'?'th-TH':'en-GB',{dateStyle:'medium',timeStyle:'short'}):'–');
+const t=k=>{const v=T[lang][k];return Array.isArray(v)?v.map(sub):sub(v)};
+const dnTH=new Intl.DisplayNames(['th'],{type:'region'});
+const nm=(d,l=lang)=>l==='en'?d.n:(d.c?(()=>{try{return dnTH.of(d.c)}catch(e){return d.n}})():(TH_G[d.n]||d.n));
+const $=id=>document.getElementById(id);
+const gr=(a,b,y)=>a&&b?((b/a)**(1/y)-1)*100:null;
+const col=(i,a=1)=>`hsla(${(i*137.5+215)%360},68%,46%,${a})`;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+
+/* ---------- data panel ---------- */
+function renderStatus(){
+  const k=status.k,el=$('dstat');
+  const base=k==='load'?t('stLoad'):k==='ok'?t('stOk'):k==='cache'?t('stCache'):t('stEmb');
+  el.className='dstat '+(k==='ok'?'good':k==='load'?'':'warn');
+  el.innerHTML=esc(base)+(status.err?' <small>'+esc(t('stErr'))+esc(status.err)+'</small>':'')+(k==='ok'&&MODEL.src.compFail&&MODEL.src.compFail.length?' <small>'+esc(t('stComp'))+MODEL.src.compFail.map(x=>t('i_'+x)).join(', ')+'</small>':'')+(status.nw?'<div class="new">'+esc(t('stNew'))+'</div>':'');
+  $('bup').disabled=busy;
+}
+function dataPanel(){
+  $('dsrc').innerHTML=[['auto','sAuto'],['owid','sOwid'],['undp','sUndp'],['api','sApi']].map(([v,k])=>`<option value="${v}" ${prefs.src===v?'selected':''}>${t(k)}</option>`).join('');
+  $('dym').innerHTML=[['key','yKey'],['five','yFive'],['all','yAll']].map(([v,k])=>`<option value="${v}" ${prefs.ym===v?'selected':''}>${t(k)}</option>`).join('');
+  $('dkey').style.display=prefs.src==='api'?'':'none';$('dkey').placeholder=t('kPh');$('dkey').value=prefs.key||'';
+  $('dl').textContent=t('dl');$('dl').href=UNDP_PAGE;
+  renderStatus();
+}
+$('dsrc').onchange=e=>{prefs.src=e.target.value;savePrefs();dataPanel();if(prefs.src!=='api'||prefs.key)update(true)};
+$('dym').onchange=e=>{prefs.ym=e.target.value;savePrefs();applyModel(MODEL);applyLang()};
+$('dkey').onchange=e=>{prefs.key=e.target.value.trim();savePrefs();if(prefs.key)update(true)};
+$('bup').onclick=()=>update(true);
+$('bimp').onclick=()=>$('dfile').click();
+$('dfile').onchange=e=>{const f=e.target.files[0];if(f)importFile(f);e.target.value=''};
+
+/* ---------- search ---------- */
+let hl=0,matches=[];
+function search(){
+  const q=$('q').value.trim().toLowerCase();
+  const sc=d=>{const a=[nm(d,'th').toLowerCase(),d.n.toLowerCase(),(d.c||'').toLowerCase()];
+    if(!q)return 1; if(a.some(s=>s.startsWith(q)))return 0; if(a.some(s=>s.split(/[\s(),-]+/).some(w=>w.startsWith(q))))return 1; if(a.some(s=>s.includes(q)))return 2; return 9;};
+  matches=D.map(d=>[sc(d),d]).filter(x=>x[0]<9||!q).sort((a,b)=>a[0]-b[0]||nm(a[1]).localeCompare(nm(b[1]),lang)).map(x=>x[1]);
+  hl=0;drawDD();
+}
+function drawDD(){
+  const dd=$('dd');dd.style.display='block';
+  dd.innerHTML=matches.length?'':`<div>${t('nf')}</div>`;
+  matches.forEach((d,i)=>{const e=document.createElement('div');
+    e.className=(sel.includes(d)?'on ':'')+(i===hl?'hl':'');
+    e.innerHTML=`<span>${sel.includes(d)?'✓ ':''}${esc(nm(d))}</span><small>${esc(lang==='th'?d.n:nm(d,'th'))}${d.c?'':' · '+t('grp')}</small>`;
+    e.onmousedown=ev=>{ev.preventDefault();toggle(d)};dd.appendChild(e)});
+}
+function toggle(d){sel=sel.includes(d)?sel.filter(x=>x!==d):[...sel,d];refresh();drawDD()}
+$('q').addEventListener('input',search);
+$('q').addEventListener('focus',search);
+$('q').addEventListener('blur',()=>$('dd').style.display='none');
+$('q').addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'){hl=Math.min(hl+1,matches.length-1);drawDD();$('dd').children[hl]?.scrollIntoView({block:'nearest'})}
+  else if(e.key==='ArrowUp'){hl=Math.max(hl-1,0);drawDD();$('dd').children[hl]?.scrollIntoView({block:'nearest'})}
+  else if(e.key==='Enter'&&matches[hl]){toggle(matches[hl])}
+  else if(e.key==='Escape')$('dd').style.display='none';
+});
+
+/* ---------- table ---------- */
+const CK7=[['le','f1'],['eys','f1'],['mys','f1'],['gni','int'],['hi','h3'],['ei','h3'],['ii','h3']];
+const FM={rk:v=>v,txt:v=>v,h3:v=>v.toFixed(3),chg:v=>(v>0?'+':'')+v.toFixed(3),g2:v=>v.toFixed(2),f1:v=>v.toFixed(1),int:v=>Math.round(v).toLocaleString('en-US')};
+const fmtK=k=>k==='gni'?FM.int:k[1]==='i'?FM.h3:FM.f1;
+function rows(){
+  const f3=v=>v==null?null:+v.toFixed(3);
+  const R=[{l:t('rRank'),v:sel.map(d=>d.rk||null),f:'rk'},{l:t('rTier'),v:sel.map(d=>(TIER[d.t]||[null,null])[lang==='th'?0:1]),f:'txt'}];
+  YRS.forEach((y,i)=>R.push({l:t('rHDI')+' '+y,v:sel.map(d=>d.v[i]),f:'h3',b:1}));
+  R.push({l:t('rChg'),v:sel.map(d=>d.v[0]!=null&&d.v[L]!=null?f3(d.v[L]-d.v[0]):null),f:'chg',b:1});
+  R.push({l:t('rGr'),v:sel.map(d=>{const g=gr(d.v[0],d.v[L],LY-FY);return g==null?null:+g.toFixed(2)}),f:'g2',b:1});
+  if(HASC){const ci=compIdx();R.push({sec:t('secC')});
+    CK7.forEach(([k,f])=>R.push({l:t('i_'+k),v:sel.map(d=>d.cp[k][ci]),f,b:1,dim:k[1]==='i'}));
+    R.push({l:t('i_low'),v:sel.map(d=>{const x=[['hi',d.cp.hi[ci]],['ei',d.cp.ei[ci]],['ii',d.cp.ii[ci]]].filter(z=>z[1]!=null);if(x.length<3)return null;return t('d_'+x.sort((p,q)=>p[1]-q[1])[0][0])}),f:'txt'});}
+  return R;
+}
+function renderTable(){
+  const cl=$('cyl');cl.style.display=HASC&&sel.length?'':'none';
+  if(HASC)$('cyr').innerHTML=COMPY.map(y=>`<option ${y===cyear?'selected':''}>${y}</option>`).join('');
+  if(!sel.length){$('tbl').innerHTML=`<div class="empty">${t('none')}</div>`;$('cap').textContent='';$('bxl').disabled=true;return}
+  $('bxl').disabled=false;
+  const R=rows();
+  let h='<table><thead><tr><th></th>'+sel.map(d=>`<th>${esc(nm(d))}</th>`).join('')+'</tr></thead><tbody>';
+  R.forEach(r=>{
+    if(r.sec){h+=`<tr class="sec"><td colspan="${sel.length+1}">${esc(r.sec)}</td></tr>`;return}
+    const nums=r.v.filter(v=>typeof v==='number');
+    const mx=r.b&&sel.length>1&&nums.length?Math.max(...nums):null;
+    h+=`<tr${r.dim?' class="dim"':''}><td>${esc(r.l)}</td>`+r.v.map(v=>{
+      const s=v==null?'–':(typeof v==='number'?FM[r.f](v):esc(v));
+      return `<td class="${mx!=null&&v===mx?'best':''}">${s}</td>`}).join('')+'</tr>';
+  });
+  $('tbl').innerHTML=h+'</tbody></table>';
+  $('cap').innerHTML=esc(t('cap'))+(HASC?'<br><br>'+esc(t('capC')):'<br><br>'+esc(t('noComp')));
+}
+$('cyr').onchange=e=>{cyear=+e.target.value;refresh()};
+$('bxl').onclick=()=>{
+  const R=rows();
+  const ws=XLSX.utils.aoa_to_sheet([[t('tTitle')],[],['',...sel.map(d=>nm(d))],...R.map(r=>r.sec?[r.sec]:[r.l,...r.v])]);
+  ws['!cols']=[{wch:40},...sel.map(()=>({wch:20}))];
+  const full=XLSX.utils.aoa_to_sheet([['Year',...sel.map(d=>nm(d))],...MODEL.years.map((y,i)=>[y,...sel.map(d=>d.all[i])])]);
+  const ind=XLSX.utils.aoa_to_sheet([[lang==='th'?'ประเทศ/กลุ่ม':'Country/group',lang==='th'?'ปี':'Year','HDI',...CK7.map(([k])=>t('i_'+k))],
+    ...sel.flatMap(d=>MODEL.years.map((y,i)=>[nm(d),y,d.all[i],...CK7.map(([k])=>d.cp[k][i])]))]);
+  ind['!cols']=[{wch:28},{wch:6},{wch:8},...CK7.map(()=>({wch:18}))];
+  const note=XLSX.utils.aoa_to_sheet([[t('cap')],[t('capC')],[t('src')],[MODEL.src.url||'']]);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'HDI');XLSX.utils.book_append_sheet(wb,full,'HDI all years');XLSX.utils.book_append_sheet(wb,ind,'Indicators');XLSX.utils.book_append_sheet(wb,note,'Notes');
+  XLSX.writeFile(wb,`HDI_comparison_${FY}-${LY}.xlsx`);
+};
+
+/* ---------- charts ---------- */
+const BG={id:'bg',beforeDraw(c){const x=c.ctx;x.save();x.globalCompositeOperation='destination-over';x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.restore()}};
+const VL={id:'vl',afterDatasetsDraw(ch){
+  const o=ch.options.plugins.vl||{};if(!o.mode||o.mode==='off')return;
+  const x=ch.ctx;x.save();x.font='600 11px Sarabun,sans-serif';x.fillStyle='#1c2333';x.textBaseline='bottom';x.textAlign='center';
+  const hz=ch.options.indexAxis==='y';
+  ch.data.datasets.forEach((ds,di)=>{
+    const m=ch.getDatasetMeta(di);if(m.hidden||ds.nolabel)return;
+    let last=-1;ds.data.forEach((v,i)=>{if(v!=null)last=i});
+    m.data.forEach((el,i)=>{const v=ds.data[i];if(v==null)return;
+      if(o.mode==='latest'&&i!==last)return;
+      if(o.mode==='nth'&&i%Math.max(1,o.n)!==0)return;
+      const txt=o.f?o.f(v,ds,i):(typeof v==='number'?(Math.abs(v)<1?v.toFixed(3):v.toFixed(2)):v);
+      if(hz){x.textAlign='left';x.textBaseline='middle';x.fillText(txt,el.x+4,el.y)}
+      else{x.textAlign='center';x.textBaseline='bottom';x.fillText(txt,el.x,el.y-5)}
+    })});
+  x.restore()}};
+Chart.register(VL,BG);Chart.defaults.font.family='Sarabun,sans-serif';
+
+function card(id,key,modes,defN,cfg,f,x){
+  const s=LS[id]||(LS[id]={mode:'off',n:defN});
+  cfg.options=Object.assign({responsive:true,maintainAspectRatio:false,layout:{padding:{top:16,right:24}}},cfg.options||{});
+  cfg.options.plugins=Object.assign({legend:{position:'bottom'},vl:{mode:s.mode,n:s.n,f}},cfg.options.plugins||{});
+  const e=document.createElement('div');e.className='card ch';
+  const lbl={off:t('off'),all:t('all'),latest:t('latest'),nth:t('nth')};
+  e.innerHTML=`<h3>${t(key)[0]}</h3><p>${t(key)[1]}</p><div class="ctl">${x?`<select class="xs">${x.o.map(([v,l])=>`<option value="${v}" ${v===x.v?'selected':''}>${esc(l)}</option>`).join('')}</select>`:''}<button class="btn sec png">${t('png')}</button><span>${t('lab')}</span><select>${modes.map(m=>`<option value="${m}" ${m===s.mode?'selected':''}>${lbl[m]}</option>`).join('')}</select><input type="number" min="1" value="${s.n}" title="N"></div><div class="cv"><canvas></canvas></div>`;
+  $('grid').appendChild(e);
+  const ch=new Chart(e.querySelector('canvas'),cfg);charts.push(ch);
+  const sl=e.querySelector('select:not(.xs)'),inp=e.querySelector('input');
+  if(x)e.querySelector('.xs').onchange=ev=>x.on(ev.target.value);
+  const up=()=>{s.mode=sl.value;s.n=+inp.value||1;inp.style.display=s.mode==='nth'?'':'none';ch.options.plugins.vl.mode=s.mode;ch.options.plugins.vl.n=s.n;ch.update()};
+  sl.onchange=up;inp.oninput=up;inp.style.display=s.mode==='nth'?'':'none';
+  e.querySelector('.png').onclick=()=>{const a=document.createElement('a');a.href=ch.toBase64Image('image/png',1);a.download=`HDI_${id}.png`;a.click()};
+}
+function renderCharts(){
+  charts.forEach(c=>c.destroy());charts=[];$('grid').innerHTML='';
+  $('charts').style.display=show&&sel.length?'block':'none';
+  if(!show||!sel.length)return;
+  const N=sel.map(nm),T_=['off','all','latest','nth'],B=['off','all','nth'];
+  const ds=(fn,extra={})=>sel.map((d,i)=>Object.assign({label:N[i],data:fn(d),borderColor:col(i),backgroundColor:col(i,.75)},extra));
+  const yAx=(min)=>({scales:{y:{min}}});
+  card('trend','c1',T_,2,{type:'line',data:{labels:YRS,datasets:ds(d=>d.v,{tension:.25,spanGaps:true,pointRadius:4,borderWidth:2.5,backgroundColor:undefined})}});
+  card('byyear','c2',T_,2,{type:'bar',data:{labels:YRS,datasets:ds(d=>d.v)},options:{scales:{y:{min:0,max:1}}}});
+  const sorted=sel.map((d,i)=>({d,i,v:d.v[L]})).sort((a,b)=>(b.v??-1)-(a.v??-1));
+  card('latest','c3',B,10,{type:'bar',data:{labels:sorted.map(x=>N[x.i]),datasets:[{label:'HDI '+LY,data:sorted.map(x=>x.v),backgroundColor:sorted.map(x=>col(x.i,.8))}]},options:{indexAxis:sel.length>6?'y':'x',scales:{[sel.length>6?'x':'y']:{min:0,max:1}},plugins:{legend:{display:false}}}});
+  const chg=sel.map((d,i)=>({i,v:d.v[0]!=null&&d.v[L]!=null?+(d.v[L]-d.v[0]).toFixed(3):null})).sort((a,b)=>(b.v??-9)-(a.v??-9));
+  card('change','c4',B,10,{type:'bar',data:{labels:chg.map(x=>N[x.i]),datasets:[{label:t('rChg'),data:chg.map(x=>x.v),backgroundColor:chg.map(x=>col(x.i,.8))}]},options:{indexAxis:sel.length>6?'y':'x',plugins:{legend:{display:false}}}},v=>(v>0?'+':'')+v.toFixed(3));
+  const ms=[...new Set([FY,...YRS.filter(y=>y%10===0),LY])].sort((a,b)=>a-b);
+  const P=[];for(let i=0;i<ms.length-1;i++)P.push([YRS.indexOf(ms[i]),YRS.indexOf(ms[i+1]),ms[i+1]-ms[i],ms[i]+'–'+ms[i+1]]);
+  if(ms.length>2)P.push([0,L,LY-FY,FY+'–'+LY]);
+  card('growth','c5',T_,2,{type:'bar',data:{labels:P.map(x=>x[3]),datasets:ds(d=>P.map(([a,b,y])=>{const g=gr(d.v[a],d.v[b],y);return g==null?null:+g.toFixed(2)}))}},v=>v.toFixed(2));
+  card('radar','c6',T_,2,{type:'radar',data:{labels:YRS,datasets:ds(d=>d.v,{backgroundColor:undefined,fill:false,pointRadius:3})},options:{scales:{r:{min:0,max:1,ticks:{stepSize:.2}}}}});
+  const sc=ds((d)=>[{x:d.v[0],y:d.v[L]}],{pointRadius:7,pointHoverRadius:9,showLine:false});
+  sc.forEach(s=>s.backgroundColor=s.borderColor);
+  card('scatter','c7',B,1,{type:'scatter',data:{datasets:[...sc,{label:'y = x',type:'line',data:[{x:0,y:0},{x:1,y:1}],borderDash:[6,5],borderColor:'#999',pointRadius:0,nolabel:true}]},options:{scales:{x:{min:.2,max:1,title:{display:true,text:t('xF')}},y:{min:.2,max:1,title:{display:true,text:t('yL')}}}}},(v,d)=>d.label);
+  card('gap','c8',T_,2,{type:'line',data:{labels:YRS,datasets:ds(d=>d.v.map((x,i)=>x!=null&&WORLD&&WORLD.v[i]!=null?+(x-WORLD.v[i]).toFixed(3):null),{tension:.25,spanGaps:true,pointRadius:4,borderWidth:2.5,backgroundColor:undefined})}},v=>(v>0?'+':'')+v.toFixed(3));
+  /* ----- องค์ประกอบของ HDI ----- */
+  if(!HASC){const e=document.createElement('div');e.className='card ch';e.innerHTML=`<h3>${esc(t('c9')[0])}</h3><p>${esc(t('noComp'))}</p>`;$('grid').appendChild(e);return}
+  const ci=compIdx(),DK=['hi','ei','ii'],DL=DK.map(k=>t('d_'+k)),DC=['#e11d48','#f59e0b','#16a34a'];
+  card('dims','c9',B,1,{type:'radar',data:{labels:DL,datasets:ds(d=>DK.map(k=>d.cp[k][ci]),{backgroundColor:undefined,fill:false,pointRadius:4,borderWidth:2.5})},options:{scales:{r:{min:0,max:1,ticks:{stepSize:.2}}}}});
+  card('dimbar','c10',B,1,{type:'bar',data:{labels:N,datasets:DK.map((k,j)=>({label:DL[j],data:sel.map(d=>d.cp[k][ci]),backgroundColor:DC[j]}))},options:{indexAxis:sel.length>6?'y':'x',scales:{[sel.length>6?'x':'y']:{min:0,max:1}}}});
+  const IO=CK7.map(([k])=>[k,t('i_'+k)]);
+  const ik=LS.ik||'le',ik2=LS.ik2||'gni';
+  card('ind','c11',T_,2,{type:'line',data:{labels:YRS,datasets:ds(d=>YI.map(i=>d.cp[ik][i]),{tension:.25,spanGaps:true,pointRadius:4,borderWidth:2.5,backgroundColor:undefined})},options:{scales:{y:{title:{display:true,text:t('i_'+ik)}}}}},fmtK(ik),{o:IO,v:ik,on:v=>{LS.ik=v;renderCharts()}});
+  const sv=sel.map((d,i)=>({i,v:d.cp[ik2][ci]})).sort((a,b)=>(b.v??-1)-(a.v??-1));
+  card('indbar','c12',B,1,{type:'bar',data:{labels:sv.map(z=>N[z.i]),datasets:[{label:t('i_'+ik2),data:sv.map(z=>z.v),backgroundColor:sv.map(z=>col(z.i,.8))}]},options:{indexAxis:sel.length>6?'y':'x',plugins:{legend:{display:false}},scales:{[sel.length>6?'x':'y']:{beginAtZero:true,title:{display:true,text:t('i_'+ik2)}}}}},fmtK(ik2),{o:IO,v:ik2,on:v=>{LS.ik2=v;renderCharts()}});
+  const bub=sel.map((d,i)=>({label:N[i],data:[{x:d.cp.gni[ci],y:d.cp.le[ci],r:d.cp.ei[ci]!=null?4+d.cp.ei[ci]*16:6}],backgroundColor:col(i,.55),borderColor:col(i)})).filter(z=>z.data[0].x!=null&&z.data[0].y!=null);
+  card('bubble','c13',B,1,{type:'bubble',data:{datasets:bub},options:{scales:{x:{type:'logarithmic',title:{display:true,text:t('i_gni')}},y:{title:{display:true,text:t('i_le')}}}}},(v,d)=>d.label);
+}
+
+/* ---------- chrome ---------- */
+function chips(){
+  $('chips').innerHTML='';
+  sel.forEach(d=>{const e=document.createElement('span');e.className='chip';e.innerHTML=`${esc(nm(d))}<b title="✕">✕</b>`;e.querySelector('b').onclick=()=>toggle(d);$('chips').appendChild(e)});
+}
+function refresh(){chips();renderTable();renderCharts()}
+function applyLang(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll('[data-i]').forEach(e=>e.textContent=t(e.dataset.i));
+  $('bch').textContent=t(show?'hideCh':'showCh');$('q').placeholder=t('ph');
+  $('bth').classList.toggle('on',lang==='th');$('ben').classList.toggle('on',lang==='en');
+  dataPanel();refresh();
+}
+$('bth').onclick=()=>{lang='th';applyLang()};$('ben').onclick=()=>{lang='en';applyLang()};
+$('bch').onclick=()=>{show=!show;$('bch').textContent=t(show?'hideCh':'showCh');renderCharts();if(show&&sel.length)$('charts').scrollIntoView({behavior:'smooth'})};
+$('brs').onclick=()=>{sel=[];show=false;LS={};$('q').value='';$('dd').style.display='none';applyLang()};
+
+/* ---------- start: แสดงข้อมูลทันที (แคช/ฝังในไฟล์) แล้วดึงข้อมูลออนไลน์เบื้องหลัง ---------- */
+(function init(){
+  const c=store.get(CK);
+  if(c&&c.years&&c.rows&&c.years.at(-1)>=HDI_DATA.years.at(-1)){applyModel(c);status={k:'cache'}}else applyModel(embModel());
+  applyLang();
+  const age=Date.now()-(MODEL.src.ts||0);
+  if(MODEL.src.id==='emb'||age>MAX_AGE)update(false);
+  setInterval(()=>{if(!document.hidden)update(false)},POLL);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-(MODEL.src.ts||0)>POLL)update(false)});
+})();
+</script>
+</body>
+</html>
